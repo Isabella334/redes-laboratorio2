@@ -90,17 +90,17 @@ def message_correction(trama, r: int = 4, padding: int = 0):
         )
 
     datos = []
-    hubo_algun_error = False
+    error_check = False
 
     for i in range(0, len(trama), n):
         bloque = trama[i:i + n]
         datos_bloque, error_en_bloque = code(bloque, r)
         datos.append(datos_bloque)
-        hubo_algun_error = hubo_algun_error or error_en_bloque
+        error_check = error_check or error_en_bloque
 
     datos_completos = "".join(datos)
 
     if padding:
         datos_completos = datos_completos[:-padding]
 
-    return datos_completos, hubo_algun_error
+    return datos_completos, error_check
