@@ -1,106 +1,123 @@
-def calc_r(m):
+def calculate_r(m):
     if m < 1:
-        raise ValueError("m debe ser un entero positivo")
+        raise ValueError("m must be a positive integer")
+
     r = 1
     while (m + r + 1) > 2 ** r:
         r += 1
+
     return r
 
 
-def mr(r):
+def calculate_m(r):
     if r < 1:
-        raise ValueError("r debe ser un entero positivo")
+        raise ValueError("r must be a positive integer")
 
     m = 2 ** r - r - 1
+
     if m < 1:
         raise ValueError(
-            f"r={r} es demasiado pequeño: no queda espacio para bits de datos"
+            f"r={r} is too small: there is no space left for data bits"
         )
+
     return m
 
-def code(datos, r):
-    m = len(datos)
+
+def encode(data, r):
+    m = len(data)
     n = m + r
-    bloque = [0] * (n + 1)
+    block = [0] * (n + 1)
 
-    iterador_datos = iter(datos)
-    for posicion in range(1, n + 1):
-        if not (posicion > 0 and (posicion & (posicion - 1)) == 0):
-            bloque[posicion] = int(next(iterador_datos))
+    data_iter = iter(data)
+
+    for pos in range(1, n + 1):
+        if not (pos > 0 and (pos & (pos - 1)) == 0):
+            block[pos] = int(next(data_iter))
 
     for i in range(r):
-        posicion_paridad = 2 ** i
-        valor_paridad = 0
-        for posicion in range(1, n + 1):
-            if posicion & posicion_paridad:
-                valor_paridad ^= bloque[posicion]
-        bloque[posicion_paridad] = valor_paridad
+        parity_pos = 2 ** i
+        parity = 0
 
-    return "".join(str(bit) for bit in bloque[1:])
+        for pos in range(1, n + 1):
+            if pos & parity_pos:
+                parity ^= block[pos]
+
+        block[parity_pos] = parity
+
+    return "".join(str(bit) for bit in block[1:])
 
 
-def decode(bloque_codigo, r):
-    n = len(bloque_codigo)
-    bloque = [0] + [int(bit) for bit in bloque_codigo]
+def decode(codeword, r):
+    n = len(codeword)
+    block = [0] + [int(bit) for bit in codeword]
 
-    sindrome = 0
+    syndrome = 0
+
     for i in range(r):
-        posicion_paridad = 2 ** i
-        valor_paridad = 0
-        for posicion in range(1, n + 1):
-            if posicion & posicion_paridad:
-                valor_paridad ^= bloque[posicion]
-        if valor_paridad != 0:
-            sindrome += posicion_paridad
+        parity_pos = 2 ** i
+        parity = 0
 
-    hubo_error = sindrome != 0
+        for pos in range(1, n + 1):
+            if pos & parity_pos:
+                parity ^= block[pos]
 
-    if hubo_error:
-        if sindrome < n:
-            bloque[sindrome] ^= 1
+        if parity != 0:
+            syndrome += parity_pos
 
-    datos = "".join(
-        str(bloque[posicion])
-        for posicion in range(1, n + 1)
-        if not (posicion > 0 and (posicion & (posicion - 1)) == 0)
+    error = syndrome != 0
+
+    if error:
+        if syndrome <= n:
+            block[syndrome] ^= 1
+
+    data = "".join(
+        str(block[pos])
+        for pos in range(1, n + 1)
+        if not (pos > 0 and (pos & (pos - 1)) == 0)
     )
-    return datos, hubo_error
+
+    return data, error
 
 
-def calcular_integridad(bits, r: int = 4):
-    m = mr(r)
+def calculate_integrity(bits, r: int = 4):
+    m = calculate_m(r)
 
-    cantidad_padding = (-len(bits)) % m
-    bits_con_padding = bits + "0" * cantidad_padding
+    padding = (-len(bits)) % m
+    padded_bits = bits + "0" * padding
 
-    bloques_codificados = [code(bits_con_padding[i:i + m], r) for i in range(0, len(bits_con_padding), m)]
+    encoded_blocks = [
+        encode(padded_bits[i:i + m], r)
+        for i in range(0, len(padded_bits), m)
+    ]
 
-    trama = "".join(bloques_codificados)
-    return trama, cantidad_padding
+    frame = "".join(encoded_blocks)
+
+    return frame, padding
 
 
-def message_correction(trama, r: int = 4, padding: int = 0):
-    m = mr(r)
+def correct_message(frame, r: int = 4, padding: int = 0):
+    m = calculate_m(r)
     n = m + r
 
-    if len(trama) % n != 0:
+    if len(frame) % n != 0:
         raise ValueError(
-            f"La trama recibida ({len(trama)} bits) no es múltiplo del "
-            f"tamaño de bloque esperado (n={n} para r={r})."
+            f"The received frame ({len(frame)} bits) is not a multiple "
+            f"of the expected block size (n={n} for r={r})."
         )
 
-    datos = []
+    data_blocks = []
     error_check = False
 
-    for i in range(0, len(trama), n):
-        bloque = trama[i:i + n]
-        datos_bloque, error_en_bloque = code(bloque, r)
-        datos.append(datos_bloque)
-        error_check = error_check or error_en_bloque
+    for i in range(0, len(frame), n):
+        block = frame[i:i + n]
+        block_data, block_error = decode(block, r)
 
-    datos_completos = "".join(datos)
+        data_blocks.append(block_data)
+        error_check = error_check or block_error
+
+    data = "".join(data_blocks)
 
     if padding:
-        datos_completos = datos_completos[:-padding]
+        data = data[:-padding]
 
-    return datos_completos, error_check
+    return data, error_check
