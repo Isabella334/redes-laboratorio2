@@ -41,12 +41,12 @@ def process_connection(connection: socket.socket) -> None:
     metadata = _parse_metadata(metadata_str)
 
     print(
-        f"\nReceived frame ({len(frame)} bits) "
-        f"using algorithm: {algorithm}"
+        f"\nFrame recibida ({len(frame)} bits) "
+        f"utilizando el algoritmo: {algorithm}"
     )
 
     if metadata:
-        print(f"Received metadata: {metadata}")
+        print(f"Metadatos recibidos: {metadata}")
 
     data_bits, error = link.verify_integrity(
         frame,
@@ -59,21 +59,21 @@ def process_connection(connection: socket.socket) -> None:
 
         if error:
             print(
-                "Single-bit errors were detected and corrected "
-                "in each affected block."
+                "Se detectaron y corrigieron errores de un solo bit "
+                "en cada bloque afectado."
             )
 
-        print(f"Decoded message: {text}")
+        print(f"Mensaje decodificado: {text}")
 
     else:
         if error:
             print(
-                "ERROR: An error was detected in the frame "
-                "and cannot be corrected."
+                "ERROR: Se detectó un error en el frame "
+                "y no puede ser corregido."
             )
         else:
             text = decode_message(data_bits)
-            print(f"Decoded message: {text}")
+            print(f"Mensaje decodificado: {text}")
 
 
 def start_receiver(port: int = 5000) -> None:
@@ -82,7 +82,7 @@ def start_receiver(port: int = 5000) -> None:
         server.bind(("0.0.0.0", port))
         server.listen(1)
 
-        print(f"Test receiver listening on port {port}...")
+        print(f"Receptor de prueba escuchando en el puerto {port}...")
 
         while True:
             connection, address = server.accept()

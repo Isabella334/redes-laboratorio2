@@ -14,67 +14,67 @@ def flip_bit(bits: str, pos: int) -> str:
 
 
 def test_hamming(r: int, text: str = "Hello"):
-    print(f"##### Test: Hamming with r={r} #####")
+    print(f"##### Prueba: Hamming con r={r} #####")
 
     bits = presentation.encode_message(text)
     m = hamming.calculate_m(r)
     n = m + r
 
-    print(f"Original text:      {text}")
-    print(f"Original bits:      {bits} ({len(bits)} bits)")
+    print(f"Texto original:          {text}")
+    print(f"Bits originales:         {bits} ({len(bits)} bits)")
     print(
-        f"Block config:       m={m} data bits, "
-        f"r={r} parity bits, n={n} total"
+        f"Configuración del bloque: m={m} bits de datos, "
+        f"r={r} bits de paridad, n={n} total"
     )
 
     frame, padding = hamming.calculate_integrity(bits, r)
 
-    print(f"Padding added:      {padding} bits")
-    print(f"Encoded frame:      {frame} ({len(frame)} bits)")
+    print(f"Bits de relleno agregados: {padding} bits")
+    print(f"Trama codificada:          {frame} ({len(frame)} bits)")
 
     noisy_frame = flip_bit(frame, 1)
-    print(f"Frame with error:   {noisy_frame}")
+    print(f"Trama con error:           {noisy_frame}")
 
-    recovered_bits, error = hamming.verify_integrity(
+    recovered_bits, error = hamming.correct_message(
         noisy_frame,
         r,
         padding
     )
 
-    print(f"Error detected?:    {error}")
-    print(f"Recovered bits:     {recovered_bits}")
-    print(f"Matches original:   {recovered_bits == bits}")
+    print(f"¿Error detectado?:         {error}")
+    print(f"Bits recuperados:          {recovered_bits}")
+    print(f"Coincide con el original:  {recovered_bits == bits}")
     print()
 
 
 def test_crc32():
-    print("##### Test: CRC-32 #####")
+    print("##### Prueba: CRC-32 #####")
 
     text = "Hi"
     bits = presentation.encode_message(text)
 
-    print(f"Original text:      {text}")
-    print(f"Original bits:      {bits}")
+    print(f"Texto original:      {text}")
+    print(f"Bits originales:     {bits}")
 
     frame = crc32.calculate_integrity(bits)
 
-    print(f"Encoded frame:      {frame}")
+    print(f"Trama codificada:    {frame}")
 
-    # Case 1: no errors
+    # Caso 1: sin errores
     data, error = crc32.verify_integrity(frame)
 
     print(
-        f"[No noise] Error detected?: {error} "
-        f"(should be False)"
+        f"[Sin ruido] ¿Error detectado?: {error} "
+        f"(debería ser False)"
     )
 
-    # Case 2: simulated error
+    # Caso 2: error simulado
     noisy_frame = flip_bit(frame, 5)
     data, error = crc32.verify_integrity(noisy_frame)
 
     print(
-        f"[With noise] Error detected?: {error} "
-        f"(should be True)"
+        f"[Con ruido] ¿Error detectado?: {error} "
+        f"(debería ser True)"
     )
 
     print()
